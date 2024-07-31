@@ -1,6 +1,9 @@
 package com.gogedon.rss_feed_aggregator.api;
 
-import com.gogedon.rss_feed_aggregator.domain.Feed;
+import com.gogedon.rss_feed_aggregator.request.CreateFeedRequest;
+import com.gogedon.rss_feed_aggregator.request.FeedFollowRequest;
+import com.gogedon.rss_feed_aggregator.response.FeedFollowResponse;
+import com.gogedon.rss_feed_aggregator.response.FeedResponse;
 import com.gogedon.rss_feed_aggregator.service.FeedService;
 import com.gogedon.rss_feed_aggregator.util.JwtTokenUtil;
 import lombok.RequiredArgsConstructor;
@@ -21,33 +24,26 @@ public class FeedController {
     private JwtTokenUtil jwtTokenUtil;
 
     @PostMapping
-    public Feed createFeed(@RequestBody Feed feed, @RequestHeader(name = "Authorization") String authorizationHeader) {
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            String token = authorizationHeader.substring(7);
-            String username = jwtTokenUtil.getUsernameFromToken(token);
-            return feedService.saveFeed(feed, username);
-        }
-        throw new RuntimeException("JWT Token is missing or invalid");
+    public FeedResponse createFeed(@RequestBody CreateFeedRequest request,
+                                   @RequestHeader(name = "Authorization") String authorizationHeader) {
+        return feedService.saveFeed(request, jwtTokenUtil.getUsernameFromToken(authorizationHeader));
+    }
+
+    @PostMapping("/follow")
+    public FeedFollowResponse followFeed(@RequestBody FeedFollowRequest request,
+                                         @RequestHeader(name = "Authorization") String authorizationHeader) {
+        return feedService.followFeed(request, jwtTokenUtil.getUsernameFromToken(authorizationHeader));
+    }
+
+    @GetMapping("/follow")
+    public List<FeedFollowResponse> getUserFollowFeeds(@RequestHeader(name = "Authorization") String authorizationHeader) {
+        return feedService.getUserFollowFeeds(jwtTokenUtil.getUsernameFromToken(authorizationHeader));
     }
 
     @GetMapping
-    public List<Feed> getAllFeeds() {
+    public List<FeedResponse> getAllFeeds() {
         return feedService.getAllFeeds();
     }
 
-    @GetMapping("/{id}")
-    public Feed getFeedById(@PathVariable Long id) {
-        return feedService.getFeedById(id);
-    }
-
-    @PutMapping("/{id}")
-    public Feed updateFeed(@PathVariable Long id, @RequestBody Feed feed) {
-        return feedService.updateFeed(id, feed);
-    }
-
-    @DeleteMapping("/{id}")
-    public void deleteFeed(@PathVariable Long id) {
-        feedService.deleteFeed(id);
-    }
-
 }
+

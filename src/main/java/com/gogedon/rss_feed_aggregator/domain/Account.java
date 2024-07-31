@@ -1,5 +1,6 @@
 package com.gogedon.rss_feed_aggregator.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,8 +11,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 
 
 @Entity
@@ -31,42 +33,41 @@ public class Account implements UserDetails {
     @Column(nullable = false)
     private Instant updatedAt;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String username;
 
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false, unique = true, length = 64)
-    private String apiKey;
-
-    @ManyToMany(cascade = CascadeType.ALL)
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "account_authorities",
             joinColumns = @JoinColumn(name = "account_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private Set<Authorities> authorities;
+    private Set<Authorities> authorities = new HashSet<>();
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "creator")
+    private Set<Feed> createdFeeds = new HashSet<>();
+
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-            name = "account_feeds",
+            name = "followed_feeds",
             joinColumns = @JoinColumn(name = "account_id"),
             inverseJoinColumns = @JoinColumn(name = "feed_id")
     )
-    private Set<Feed> feeds;
+    private Set<Feed> followedFeeds = new HashSet<>();
 
     @PrePersist
     protected void onCreate() {
         Instant now = Instant.now();
         this.createdAt = now;
         this.updatedAt = now;
-        this.apiKey = generateAPIKey();
     }
 
-    private String generateAPIKey() {
-        return UUID.randomUUID().toString().replace("-", "");
-    }
 
     @PreUpdate
     protected void onUpdate() {
@@ -96,5 +97,28 @@ public class Account implements UserDetails {
     @Override
     public boolean isEnabled() {
         return UserDetails.super.isEnabled();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Account account = (Account) o;
+        return id.equals(account.id);
+    }
+
+    @Override
+    public String toString() {
+        return "Account{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
     }
 }

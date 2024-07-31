@@ -7,6 +7,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -20,6 +23,9 @@ public class Authorities implements GrantedAuthority {
 
     @Column(unique = true, nullable = false)
     private String authority;
+
+    @ManyToMany(mappedBy = "authorities")
+    private Set<Account> accounts = new HashSet<>();
 
     @Override
     public String getAuthority() {

@@ -1,14 +1,19 @@
 package com.gogedon.rss_feed_aggregator.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Feed {
@@ -28,6 +33,14 @@ public class Feed {
 
     @Column(nullable = false)
     private String url;
+
+    @ManyToOne
+    @JoinColumn(name="account_id")
+    private Account creator;
+
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "followedFeeds")
+    private Set<Account> followerAccounts = new HashSet<>();
     
     @PrePersist
     protected void onCreate() {

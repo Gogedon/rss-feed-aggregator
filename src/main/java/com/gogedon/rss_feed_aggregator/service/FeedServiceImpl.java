@@ -2,9 +2,12 @@ package com.gogedon.rss_feed_aggregator.service;
 
 import com.gogedon.rss_feed_aggregator.domain.Account;
 import com.gogedon.rss_feed_aggregator.domain.Feed;
-import com.gogedon.rss_feed_aggregator.exceptions.NotFoundException;
 import com.gogedon.rss_feed_aggregator.repository.AccountRepository;
 import com.gogedon.rss_feed_aggregator.repository.FeedRepository;
+import com.gogedon.rss_feed_aggregator.request.CreateFeedRequest;
+import com.gogedon.rss_feed_aggregator.request.FeedFollowRequest;
+import com.gogedon.rss_feed_aggregator.response.FeedFollowResponse;
+import com.gogedon.rss_feed_aggregator.response.FeedResponse;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,10 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static com.gogedon.rss_feed_aggregator.mapper.FeedMapper.*;
+
 @Service
 public class FeedServiceImpl implements FeedService {
-
-    public static final String FEED_WITH_ID_NOT_FOUND = "Feed with id %d not found.";
 
     @Autowired
     private FeedRepository feedRepository;
@@ -25,38 +28,34 @@ public class FeedServiceImpl implements FeedService {
 
     @Override
     @Transactional
-    public Feed saveFeed(Feed feed, String accountUsername) {
+    public FeedResponse saveFeed(CreateFeedRequest request, String username) {
+        Account account = accountRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found for username " + username));
+        Feed newFeed = feedRepository.save(mapToFeed(request, account));
+        return mapToFeedResponse(newFeed);
+    }
+
+    @Override
+    public FeedFollowResponse followFeed(FeedFollowRequest request, String accountUsername) {
         Account account = accountRepository.findByUsername(accountUsername)
                 .orElseThrow(() -> new EntityNotFoundException("Account not found for username " + accountUsername));
-        account.getFeeds().add(feed);
+        Feed feed = feedRepository.findById(Long.valueOf(request.getFeedId()))
+                .orElseThrow(() -> new EntityNotFoundException("Feed not found with id " + request.getFeedId()));
+        account.getFollowedFeeds().add(feed);
         accountRepository.save(account);
-        return feed;
+        return mapToFeedFollowResponse(feed, account.getUsername());
     }
 
     @Override
-    public List<Feed> getAllFeeds() {
-        return feedRepository.findAll();
+    public List<FeedFollowResponse> getUserFollowFeeds(String accountUsername) {
+        Account account = accountRepository.findByUsername(accountUsername)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found for username " + accountUsername));
+        return mapToFeedFollowResponses(account.getFollowedFeeds(), account.getUsername());
     }
 
     @Override
-    public Feed getFeedById(Long id) {
-        return feedRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(String.format(FEED_WITH_ID_NOT_FOUND, id)));
+    public List<FeedResponse> getAllFeeds() {
+        return mapToFeedResponses(feedRepository.findAll());
     }
 
-    @Override
-    public Feed updateFeed(Long id, Feed feed) {
-        Feed existingFeed = feedRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(String.format(FEED_WITH_ID_NOT_FOUND, id)));
-        existingFeed.setName(feed.getName());
-        existingFeed.setUrl(feed.getUrl());
-        return feedRepository.save(existingFeed);
-    }
-
-    @Override
-    public void deleteFeed(Long id) {
-        feedRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(String.format(FEED_WITH_ID_NOT_FOUND, id)));
-        feedRepository.deleteById(id);
-    }
 }

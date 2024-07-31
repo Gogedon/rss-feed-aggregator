@@ -30,7 +30,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.UUID;
 
 @Configuration
-public class JwtSecurityConfig {
+public class SecurityConfig {
 
     @Autowired
     private AccountUserDetailsManager accountUserDetailsManager;
@@ -39,6 +39,8 @@ public class JwtSecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(requests -> requests
                 .requestMatchers(HttpMethod.GET, "/api/feed").permitAll()
+                .requestMatchers(HttpMethod.POST, "/register").permitAll()
+                .requestMatchers(HttpMethod.POST, "/login").permitAll()
                 .anyRequest().authenticated());
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         http.httpBasic(Customizer.withDefaults());
