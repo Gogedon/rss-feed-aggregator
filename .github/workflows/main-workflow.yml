@@ -1,0 +1,61 @@
+name: Java CI with Maven
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Install Docker Compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
+      - name: Start services with Docker Compose
+        run: docker-compose up -d
+
+      - name: Check pod info
+        run: docker ps
+
+      - name: Wait for PostgreSQL to be ready
+        run: docker exec -t rss-feed-aggregator-db-1 pg_isready -U postgres -d mydatabase
+
+      - name: Wait for Keycloak to be ready
+        run: |
+          for i in {1..10}; do
+            if docker-compose exec -T keycloak curl -f http://localhost:8080/health/ready; then
+              break
+            fi
+            sleep 5
+          done
+
+      - name: Build and run tests
+        run: mvn -B test --file pom.xml
+
+      - name: Package application
+        run: mvn -B package --file pom.xml -DskipTests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/mydatabase
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: password
+          KEYCLOAK_ISSUER_URI: http://localhost:8090/realms/RssFeedAggregator
+          SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT-ID: rss-feed-client
+          SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER-URI: http://localhost:8090/realms/RssFeedAggregator
+
+      - name: Update dependency graph
+        uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
+
+      - name: Shut down Docker Compose services
+        run: docker-compose down
