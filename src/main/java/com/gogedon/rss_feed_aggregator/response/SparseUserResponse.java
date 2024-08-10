@@ -7,8 +7,8 @@ import lombok.Value;
 @Value
 @Builder
 @AllArgsConstructor
-public class SparseAccountResponse {
+public class SparseUserResponse {
 
-    private Long id;
+    private String id;
     private String username;
 }

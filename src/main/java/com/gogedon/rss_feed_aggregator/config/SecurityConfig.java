@@ -1,100 +1,112 @@
 package com.gogedon.rss_feed_aggregator.config;
 
-import com.gogedon.rss_feed_aggregator.api.AuthenticationProvider;
-import com.gogedon.rss_feed_aggregator.service.AccountUserDetailsManager;
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jose.jwk.source.JWKSource;
-import com.nimbusds.jose.proc.SecurityContext;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.gogedon.rss_feed_aggregator.keycloak.KeycloakLogoutHandler;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
+import org.springframework.security.oauth2.core.user.OAuth2UserAuthority;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.interfaces.RSAPublicKey;
-import java.util.UUID;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 @Configuration
+@EnableWebSecurity
+@RequiredArgsConstructor
+@ConditionalOnProperty(name = "keycloak.enabled", havingValue = "true", matchIfMissing = true)
 public class SecurityConfig {
 
-    @Autowired
-    private AccountUserDetailsManager accountUserDetailsManager;
+    private static final String GROUPS = "groups";
+    private static final String REALM_ACCESS_CLAIM = "realm_access";
+    private static final String ROLES_CLAIM = "roles";
+
+    private final KeycloakLogoutHandler keycloakLogoutHandler;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(requests -> requests
+        http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/api/feed").permitAll()
                 .requestMatchers(HttpMethod.POST, "/register").permitAll()
                 .requestMatchers(HttpMethod.POST, "/login").permitAll()
-                .anyRequest().authenticated());
-        http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-        http.httpBasic(Customizer.withDefaults());
-        http.csrf(AbstractHttpConfigurer::disable); //allow csrf
-        http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)); //allow frames
-
-
-        http.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
+                .anyRequest()
+                .authenticated());
+        http.oauth2ResourceServer((oauth2) -> oauth2
+                .jwt(Customizer.withDefaults()));
+        http.oauth2Login(Customizer.withDefaults())
+                .logout(logout -> logout.addLogoutHandler(keycloakLogoutHandler).logoutSuccessUrl("/"));
 
         return http.build();
     }
 
     @Bean
-    public KeyPair keyPair() throws NoSuchAlgorithmException {
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-        keyPairGenerator.initialize(2048);
-        return keyPairGenerator.generateKeyPair();
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
     }
 
     @Bean
-    public RSAKey rsaKey(KeyPair keyPair) {
-        return new RSAKey.Builder((RSAPublicKey) keyPair.getPublic())
-                .privateKey(keyPair.getPrivate())
-                .keyID(UUID.randomUUID().toString())
-                .build();
+    protected SessionAuthenticationStrategy sessionAuthenticationStrategy() {
+        return new RegisterSessionAuthenticationStrategy(sessionRegistry());
     }
 
     @Bean
-    public JWKSource<SecurityContext> jwkSource(RSAKey rsaKey) {
-        JWKSet jwkSet = new JWKSet(rsaKey);
-        return (jwkSelector, context) -> jwkSelector.select(jwkSet);
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
     }
 
     @Bean
-    public JwtDecoder jwtDecoder(RSAKey rsaKey) throws JOSEException {
-        return NimbusJwtDecoder.withPublicKey(rsaKey.toRSAPublicKey()).build();
+    public GrantedAuthoritiesMapper userAuthoritiesMapperForKeycloak() {
+        return authorities -> {
+            Set<GrantedAuthority> mappedAuthorities = new HashSet<>();
+            var authority = authorities.iterator().next();
+            boolean isOidc = authority instanceof OidcUserAuthority;
+
+            if (isOidc) {
+                var oidcUserAuthority = (OidcUserAuthority) authority;
+                var userInfo = oidcUserAuthority.getUserInfo();
+
+                // Tokens can be configured to return roles under
+                // Groups or REALM ACCESS hence have to check both
+                if (userInfo.hasClaim(REALM_ACCESS_CLAIM)) {
+                    var realmAccess = userInfo.getClaimAsMap(REALM_ACCESS_CLAIM);
+                    var roles = (Collection<String>) realmAccess.get(ROLES_CLAIM);
+                    mappedAuthorities.addAll(generateAuthoritiesFromClaim(roles));
+                } else if (userInfo.hasClaim(GROUPS)) {
+                    Collection<String> roles = userInfo.getClaim(GROUPS);
+                    mappedAuthorities.addAll(generateAuthoritiesFromClaim(roles));
+                }
+            } else {
+                var oauth2UserAuthority = (OAuth2UserAuthority) authority;
+                Map<String, Object> userAttributes = oauth2UserAuthority.getAttributes();
+
+                if (userAttributes.containsKey(REALM_ACCESS_CLAIM)) {
+                    Map<String, Object> realmAccess = (Map<String, Object>) userAttributes.get(REALM_ACCESS_CLAIM);
+                    Collection<String> roles = (Collection<String>) realmAccess.get(ROLES_CLAIM);
+                    mappedAuthorities.addAll(generateAuthoritiesFromClaim(roles));
+                }
+            }
+            return mappedAuthorities;
+        };
     }
 
     @Bean
-    public JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource) {
-        return new NimbusJwtEncoder(jwkSource);
-    }
-
-    @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(4);
-    }
-
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        AuthenticationProvider authenticationProvider = new AuthenticationProvider();
-        authenticationProvider.setPasswordEncoder(passwordEncoder());
-        authenticationProvider.setUserDetailsService(accountUserDetailsManager);
-        return authenticationProvider;
+    Collection generateAuthoritiesFromClaim(Collection roles) {
+        return roles.stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role)).toList();
     }
 
 }
