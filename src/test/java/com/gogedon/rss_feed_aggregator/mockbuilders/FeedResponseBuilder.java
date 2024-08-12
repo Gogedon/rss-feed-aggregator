@@ -2,18 +2,18 @@ package com.gogedon.rss_feed_aggregator.mockbuilders;
 
 import com.gogedon.rss_feed_aggregator.response.FeedResponse;
 
-import java.time.Instant;
+import static com.gogedon.rss_feed_aggregator.utils.TestUtils.STATIC_INSTANT;
 
 public class FeedResponseBuilder {
 
-    public static FeedResponse generateNewFeedResponse(String creatorUserId, String feedName, String feedUrl) {
+    public static FeedResponse generate(String creatorUserId, String feedName, String feedUrl) {
         return FeedResponse.builder()
                 .id(1L)
                 .creatorUserId(creatorUserId)
                 .feedUrl(feedUrl)
                 .feedName(feedName)
-                .createdAt(Instant.MIN)
-                .updatedAt(Instant.MIN)
+                .createdAt(STATIC_INSTANT)
+                .updatedAt(STATIC_INSTANT)
                 .build();
     }
 

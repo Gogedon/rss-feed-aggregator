@@ -12,7 +12,7 @@ while [ $SECONDS -lt $END_TIME ]; do
 		echo "Keycloak is ready"
 		exit 0
 	fi
-	echo "Keycloak is not ready yet. Waiting... (current status: `docker inspect -f {{.State.Health.Status}} $(docker-compose ps -q keycloak)`)"
+	echo "Keycloak is not ready yet. Waiting..."
 	sleep $INTERVAL
 done
 
