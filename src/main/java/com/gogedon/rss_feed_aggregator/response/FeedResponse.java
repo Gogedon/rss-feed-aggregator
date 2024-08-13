@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Value;
 
 import java.time.Instant;
-import java.util.List;
 
 @Value
 @Builder
@@ -13,11 +12,10 @@ import java.util.List;
 public class FeedResponse {
 
     private Long id;
-    private String name;
+    private String feedName;
     private String feedUrl;
     private Instant createdAt;
     private Instant updatedAt;
-    private SparseAccountResponse creator;
-    private List<SparseAccountResponse> followers;
+    private String creatorUserId;
 
 }

@@ -1,0 +1,14 @@
+[
+  {
+    "followerUserId": "userId1",
+    "feedName": "feedName1",
+    "feedId": 1,
+    "feedUrl": "feedUrl1"
+  },
+  {
+    "followerUserId": "userId1",
+    "feedName": "feedName2",
+    "feedId": 2,
+    "feedUrl": "feedUrl2"
+  }
+]

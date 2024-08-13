@@ -9,7 +9,7 @@ import lombok.Value;
 @AllArgsConstructor
 public class FeedFollowResponse {
 
-    private String followerUsername;
+    private String followerUserId;
     private String feedName;
     private Long feedId;
     private String feedUrl;
