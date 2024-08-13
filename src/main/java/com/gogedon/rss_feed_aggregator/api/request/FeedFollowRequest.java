@@ -1,4 +1,4 @@
-package com.gogedon.rss_feed_aggregator.request;
+package com.gogedon.rss_feed_aggregator.api.request;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

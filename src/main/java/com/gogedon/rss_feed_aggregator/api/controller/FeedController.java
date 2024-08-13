@@ -1,9 +1,10 @@
-package com.gogedon.rss_feed_aggregator.controller;
+package com.gogedon.rss_feed_aggregator.api.controller;
 
-import com.gogedon.rss_feed_aggregator.request.CreateFeedRequest;
-import com.gogedon.rss_feed_aggregator.request.FeedFollowRequest;
-import com.gogedon.rss_feed_aggregator.response.FeedFollowResponse;
-import com.gogedon.rss_feed_aggregator.response.FeedResponse;
+import com.gogedon.rss_feed_aggregator.api.request.CreateFeedRequest;
+import com.gogedon.rss_feed_aggregator.api.request.FeedFollowRequest;
+import com.gogedon.rss_feed_aggregator.api.response.FeedDetailsResponse;
+import com.gogedon.rss_feed_aggregator.api.response.FeedFollowResponse;
+import com.gogedon.rss_feed_aggregator.api.response.FeedResponse;
 import com.gogedon.rss_feed_aggregator.service.FeedService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,11 @@ public class FeedController {
     @GetMapping("/follow")
     public List<FeedFollowResponse> getUserFollowFeeds() {
         return feedService.getUserFollowFeeds(getKeycloakUserId());
+    }
+
+    @GetMapping("/inspect/{feedId}")
+    public FeedDetailsResponse getDetailedFeedResponse(@PathVariable String feedId) {
+        return feedService.getDetailedFeedResponse(feedId);
     }
 
 }

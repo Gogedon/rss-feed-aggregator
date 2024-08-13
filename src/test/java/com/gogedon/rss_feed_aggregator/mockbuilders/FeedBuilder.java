@@ -8,9 +8,9 @@ import static com.gogedon.rss_feed_aggregator.utils.TestUtils.STATIC_INSTANT;
 
 public class FeedBuilder {
 
-    public static Feed generate(String creatorUserId, String feedName, String url) {
+    public static Feed generate(String feedId, String creatorUserId, String feedName, String url) {
         return Feed.builder()
-                .id(1L)
+                .id(feedId)
                 .url(url)
                 .creatorUserId(creatorUserId)
                 .createdAt(STATIC_INSTANT)

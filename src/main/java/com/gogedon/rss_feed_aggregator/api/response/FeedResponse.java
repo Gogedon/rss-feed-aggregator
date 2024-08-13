@@ -1,4 +1,4 @@
-package com.gogedon.rss_feed_aggregator.response;
+package com.gogedon.rss_feed_aggregator.api.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +11,7 @@ import java.time.Instant;
 @AllArgsConstructor
 public class FeedResponse {
 
-    private Long id;
+    private String id;
     private String feedName;
     private String feedUrl;
     private Instant createdAt;

@@ -1,4 +1,4 @@
-package com.gogedon.rss_feed_aggregator.response;
+package com.gogedon.rss_feed_aggregator.api.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +11,7 @@ public class FeedFollowResponse {
 
     private String followerUserId;
     private String feedName;
-    private Long feedId;
+    private String feedId;
     private String feedUrl;
 
 }

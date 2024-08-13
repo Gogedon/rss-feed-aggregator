@@ -1,6 +1,6 @@
 [
   {
-    "id": 1,
+    "id": "id1",
     "feedName": "feedName1",
     "feedUrl": "feedUrl1",
     "createdAt": "2024-08-12T00:00:00Z",
@@ -8,7 +8,7 @@
     "creatorUserId": "userId1"
   },
   {
-    "id": 1,
+    "id": "id2",
     "feedName": "feedName2",
     "feedUrl": "feedUrl2",
     "createdAt": "2024-08-12T00:00:00Z",

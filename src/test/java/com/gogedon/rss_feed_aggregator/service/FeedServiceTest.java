@@ -4,7 +4,7 @@ import com.gogedon.rss_feed_aggregator.config.ContainersConfig;
 import com.gogedon.rss_feed_aggregator.mockbuilders.FeedBuilder;
 import com.gogedon.rss_feed_aggregator.mockbuilders.FeedResponseBuilder;
 import com.gogedon.rss_feed_aggregator.repository.FeedRepository;
-import com.gogedon.rss_feed_aggregator.response.FeedResponse;
+import com.gogedon.rss_feed_aggregator.api.response.FeedResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -32,6 +32,7 @@ public class FeedServiceTest {
     @Test
     void shouldGetAllFeeds() {
         //Given
+        String feedId = "id";
         String userId = "userId";
         String feedName = "feedName";
         String feedUrl = "feedUrl";
@@ -39,11 +40,11 @@ public class FeedServiceTest {
         when(feedRepository.findAll())
                 .thenReturn(
                         List.of(
-                                FeedBuilder.generate(userId, feedName, feedUrl)));
+                                FeedBuilder.generate(feedId, userId, feedName, feedUrl)));
 
         //Then
         List<FeedResponse> actual = feedService.getAllFeeds();
-        FeedResponse expected = FeedResponseBuilder.generate(userId, feedName, feedUrl);
+        FeedResponse expected = FeedResponseBuilder.generate(feedId, userId, feedName, feedUrl);
         assertThat(actual).containsExactly(expected);
     }
 
