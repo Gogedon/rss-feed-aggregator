@@ -1,12 +1,16 @@
 package com.gogedon.rss_feed_aggregator.mapper;
 
+import com.gogedon.rss_feed_aggregator.api.response.*;
 import com.gogedon.rss_feed_aggregator.domain.Feed;
-import com.gogedon.rss_feed_aggregator.request.CreateFeedRequest;
-import com.gogedon.rss_feed_aggregator.response.FeedFollowResponse;
-import com.gogedon.rss_feed_aggregator.response.FeedResponse;
+import com.gogedon.rss_feed_aggregator.api.request.CreateFeedRequest;
+import com.rometools.rome.feed.synd.SyndContent;
+import com.rometools.rome.feed.synd.SyndEntry;
+import com.rometools.rome.feed.synd.SyndFeed;
+import com.rometools.rome.feed.synd.SyndPerson;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class FeedMapper {
 
@@ -45,5 +49,43 @@ public class FeedMapper {
                 .url(request.getUrl())
                 .creatorUserId(userId)
                 .build();
+    }
+
+    public static FeedDetailsResponse mapToDetailedFeedResponse(SyndFeed syndFeed) {
+        return FeedDetailsResponse.builder()
+                .title(syndFeed.getTitle())
+                .description(syndFeed.getDescription())
+                .publishedDate(syndFeed.getPublishedDate().toInstant())
+                .link(syndFeed.getUri())
+                .authors(getSyndPersonNames(syndFeed.getAuthors()))
+                .contributors(getSyndPersonNames(syndFeed.getContributors()))
+                .entries(mapToFeedEntryResponses(syndFeed.getEntries()))
+                .build();
+    }
+
+    private static Set<FeedEntryResponse> mapToFeedEntryResponses(List<SyndEntry> entries) {
+        return entries.stream().map(entry -> mapToFeedEntryResponse(entry)).collect(Collectors.toSet());
+    }
+
+    private static FeedEntryResponse mapToFeedEntryResponse(SyndEntry syndEntry) {
+        return FeedEntryResponse.builder()
+                .title(syndEntry.getTitle())
+                .description(mapToFeedContentResponse(syndEntry.getDescription()))
+                .publishedDate(syndEntry.getPublishedDate().toInstant())
+                .link(syndEntry.getUri())
+                .authors(getSyndPersonNames(syndEntry.getAuthors()))
+                .contributors(getSyndPersonNames(syndEntry.getContributors()))
+                .build();
+    }
+
+    private static FeedContentResponse mapToFeedContentResponse(SyndContent syndContent) {
+        return FeedContentResponse.builder()
+                .type(syndContent.getType())
+                .value(syndContent.getValue())
+                .build();
+    }
+
+    private static Set<String> getSyndPersonNames(List<SyndPerson> syndPeople) {
+        return syndPeople.stream().map(SyndPerson::getName).collect(Collectors.toSet());
     }
 }

@@ -1,1 +1,1 @@
-INSERT INTO feed (created_at, creator_user_id, follower_user_ids, name, updated_at, url) VALUES ('2024-08-09 10:30:00', '6eea1d32-8ad1-4d2c-829d-f89d60c30a34', '{}', 'Tech News Daily', '2024-08-09 10:30:00', 'https://technewsdaily.com/rss');
+INSERT INTO feed (id, created_at, creator_user_id, follower_user_ids, name, updated_at, url) VALUES ('6eea1d32-8ad1-4d2c-829d-f89d60c30a35', '2024-08-09 10:30:00', '6eea1d32-8ad1-4d2c-829d-f89d60c30a34', '{}', 'Tech News Daily', '2024-08-09 10:30:00', 'https://technewsdaily.com/rss');

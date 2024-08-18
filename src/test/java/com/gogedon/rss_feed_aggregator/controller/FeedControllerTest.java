@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gogedon.rss_feed_aggregator.config.ContainersConfig;
 import com.gogedon.rss_feed_aggregator.mockbuilders.FeedFollowResponseBuilder;
 import com.gogedon.rss_feed_aggregator.mockbuilders.FeedResponseBuilder;
-import com.gogedon.rss_feed_aggregator.request.CreateFeedRequest;
-import com.gogedon.rss_feed_aggregator.request.FeedFollowRequest;
+import com.gogedon.rss_feed_aggregator.api.request.CreateFeedRequest;
+import com.gogedon.rss_feed_aggregator.api.request.FeedFollowRequest;
 import com.gogedon.rss_feed_aggregator.service.FeedService;
 import com.gogedon.rss_feed_aggregator.utils.KeycloakTestService;
 import com.gogedon.rss_feed_aggregator.utils.TestUtils;
@@ -48,8 +48,8 @@ public class FeedControllerTest {
         // When
         when(service.getAllFeeds()).thenReturn(
                 List.of(
-                        FeedResponseBuilder.generate("userId1", "feedName1", "feedUrl1"),
-                        FeedResponseBuilder.generate("userId2", "feedName2", "feedUrl2")
+                        FeedResponseBuilder.generate("id1", "userId1", "feedName1", "feedUrl1"),
+                        FeedResponseBuilder.generate("id2", "userId2", "feedName2", "feedUrl2")
                 )
         );
 
@@ -63,7 +63,7 @@ public class FeedControllerTest {
     void shouldCreateFeed() throws Exception {
         // When
         when(service.saveFeed(any(), any())).thenReturn(
-                FeedResponseBuilder.generate("userId", "feedName", "feedUrl")
+                FeedResponseBuilder.generate("id", "userId", "feedName", "feedUrl")
         );
 
         // Then
@@ -80,8 +80,8 @@ public class FeedControllerTest {
         // When
         when(service.getUserFollowFeeds(any())).thenReturn(
                 List.of(
-                        FeedFollowResponseBuilder.generate(1L, "userId1", "feedName1", "feedUrl1"),
-                        FeedFollowResponseBuilder.generate(2L, "userId1", "feedName2", "feedUrl2")
+                        FeedFollowResponseBuilder.generate("id1", "userId1", "feedName1", "feedUrl1"),
+                        FeedFollowResponseBuilder.generate("id2", "userId1", "feedName2", "feedUrl2")
                 )
         );
 
@@ -97,7 +97,7 @@ public class FeedControllerTest {
     void shouldFollowFeed() throws Exception {
         // When
         when(service.followFeed(any(), any())).thenReturn(
-                FeedFollowResponseBuilder.generate(1L, "userId", "feedName", "feedUrl")
+                FeedFollowResponseBuilder.generate("id", "userId", "feedName", "feedUrl")
         );
 
         // Then
@@ -105,7 +105,7 @@ public class FeedControllerTest {
         mockMvc.perform(post("/api/feed/follow")
                         .header("Authorization", "Bearer " + keycloak.getToken())
                         .contentType(APPLICATION_JSON_UTF8)
-                        .content(new ObjectMapper().writeValueAsBytes(new FeedFollowRequest("1L"))))
+                        .content(new ObjectMapper().writeValueAsBytes(new FeedFollowRequest("id"))))
                 .andDo(print()).andExpect(status().isOk())
                 .andExpect(content().string(expected));
     }

@@ -1,4 +1,4 @@
-package com.gogedon.rss_feed_aggregator.request;
+package com.gogedon.rss_feed_aggregator.api.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Value;

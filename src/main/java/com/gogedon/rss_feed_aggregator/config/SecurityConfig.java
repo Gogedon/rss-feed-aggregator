@@ -42,9 +42,8 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.GET, "/api/feed/inspect/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/feed").permitAll()
-                .requestMatchers(HttpMethod.POST, "/register").permitAll()
-                .requestMatchers(HttpMethod.POST, "/login").permitAll()
                 .anyRequest()
                 .authenticated())
                 .cors(AbstractHttpConfigurer::disable)

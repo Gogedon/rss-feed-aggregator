@@ -1,6 +1,6 @@
 {
   "followerUserId": "userId",
   "feedName": "feedName",
-  "feedId": 1,
+  "feedId": "id",
   "feedUrl": "feedUrl"
 }
